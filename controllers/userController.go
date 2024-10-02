@@ -3,7 +3,7 @@ package controllers
 import (
 	"net/http"
 	"online-shopping-api/models"
-	"online-shopping-api/validators" // Import the validators package
+	"online-shopping-api/validators"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,11 +29,11 @@ func RegisterUser(c *gin.Context) {
 	}
 
 	// Register user using the model function.
-	err := models.RegisterUser(form.Email, form.Password)
+	userID, err := models.RegisterUser(form.Email, form.Password) // Update to receive user ID
 	if err != nil {
 		c.AsciiJSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.AsciiJSON(http.StatusOK, gin.H{"status": "User registered successfully"})
+	c.AsciiJSON(http.StatusOK, gin.H{"status": "User registered successfully", "userID": userID}) // Include user ID in response
 }

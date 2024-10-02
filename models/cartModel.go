@@ -1,6 +1,9 @@
 package models
 
-import "errors"
+import (
+	"errors"
+	"sync"
+)
 
 // Cart represents a user's shopping cart.
 type Cart struct {
@@ -8,10 +11,16 @@ type Cart struct {
 }
 
 // In-memory data store for user carts.
-var userCarts = make(map[string]Cart)
+var (
+	userCarts = make(map[string]Cart)
+	mu        sync.Mutex // Mutex to ensure thread-safe operations on user carts
+)
 
 // GetUserCart retrieves the cart for a specific user by user ID.
 func GetUserCart(userID string) (Cart, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
 	cart, exists := userCarts[userID]
 	if !exists {
 		// Initialize a new cart if the user has no existing cart.
@@ -23,13 +32,16 @@ func GetUserCart(userID string) (Cart, error) {
 
 // UpdateUserCart saves the updated cart for a user by user ID.
 func UpdateUserCart(userID string, cart Cart) error {
+	mu.Lock()
+	defer mu.Unlock()
+
 	userCarts[userID] = cart
 	return nil
 }
 
 // AddItem adds an item to the user's cart.
 func (c *Cart) AddItem(itemID string) error {
-	// Check if the item exists in the inventory (replace with real check in production).
+	// Check if the item exists in the inventory.
 	if !ItemExists(itemID) {
 		return errors.New("item not found in inventory")
 	}

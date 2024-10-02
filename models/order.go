@@ -3,7 +3,6 @@ package models
 import (
 	"errors"
 	"fmt"
-	"sync"
 )
 
 // Order represents a single order.
@@ -17,15 +16,11 @@ type Order struct {
 // In-memory data store for orders.
 var (
 	orders         = make(map[string]Order)
-	orderIDCounter int        // Counter to generate unique order IDs
-	mu             sync.Mutex // To ensure thread-safe operations on orders
+	orderIDCounter int // Counter to generate unique order IDs
 )
 
 // GetOrderById retrieves an order by its ID.
 func GetOrderById(id string) (Order, error) {
-	mu.Lock()
-	defer mu.Unlock()
-
 	order, exists := orders[id]
 	if !exists {
 		return Order{}, errors.New("order not found")
@@ -35,9 +30,6 @@ func GetOrderById(id string) (Order, error) {
 
 // UpdateOrder updates an order in the data store.
 func UpdateOrder(id string, updatedOrder Order) error {
-	mu.Lock()
-	defer mu.Unlock()
-
 	_, exists := orders[id]
 	if !exists {
 		return errors.New("order not found")
@@ -49,15 +41,12 @@ func UpdateOrder(id string, updatedOrder Order) error {
 
 // CreateOrder adds a new order to the in-memory store.
 func CreateOrder(order Order) {
-	mu.Lock()
-	defer mu.Unlock()
-
 	orders[order.ID] = order
 }
 
 // CreateOrderFromCart creates orders based on items in the user's cart.
 func CreateOrderFromCart(userID string) ([]Order, error) {
-	cart, err := GetUserCart(userID)
+	cart, err := GetUserCart(userID) // Ensure you have a function to get the user's cart
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +58,9 @@ func CreateOrderFromCart(userID string) ([]Order, error) {
 		orderID := fmt.Sprintf("order-%d", orderIDCounter)
 
 		order := Order{
-			ID:       orderID, // Use a generated ID for the order
-			ItemName: itemID,  // Replace with a proper item name lookup as needed
-			Price:    10.0,    // Set the price based on actual item data
+			ID:       orderID,
+			ItemName: itemID, // Replace with a proper item name lookup if available
+			Price:    10.0,   // Set this dynamically based on your item database
 			Quantity: quantity,
 		}
 
@@ -81,10 +70,21 @@ func CreateOrderFromCart(userID string) ([]Order, error) {
 	}
 
 	// Clear the cart after creating the order.
-	err = UpdateUserCart(userID, Cart{Items: make(map[string]int)})
+	err = UpdateUserCart(userID, Cart{Items: make(map[string]int)}) // Make sure to define this function to clear the user's cart
 	if err != nil {
 		return nil, err
 	}
 
 	return createdOrders, nil
+}
+func DeleteOrder(orderID string) error {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if _, exists := orders[orderID]; !exists {
+		return errors.New("order not found")
+	}
+
+	delete(orders, orderID)
+	return nil
 }

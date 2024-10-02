@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"html/template"
+	"log"
 	"net/http"
 	"online-shopping-api/controllers"
 	"online-shopping-api/middleware"
@@ -30,11 +31,15 @@ func main() {
 
 	// Items routes
 	r.GET("/items", controllers.GetItems)
+
+	// Cart routes
 	r.POST("/cart/bulk", controllers.BulkAddToCart)
 
 	// Order routes
 	r.GET("/order/:id", controllers.GetOrder)
 	r.PUT("/order/:id", controllers.UpdateOrder)
+	r.POST("/order/cart", controllers.CreateOrderFromCart)
+	r.DELETE("/order/:id", controllers.DeleteOrder)
 
 	// Custom error handling
 	r.NoRoute(func(c *gin.Context) {
@@ -52,5 +57,8 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	server.ListenAndServe()
+	// Start the server and handle any errors
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatalf("Server failed to start: %v", err)
+	}
 }
